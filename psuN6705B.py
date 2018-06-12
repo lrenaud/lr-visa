@@ -149,14 +149,14 @@ class psuN6705B():
 	###########################################################################
 	## Output Enable/Disable
 	def setOutToggle(self, supNum):
-		if getOutState(supNum):
-			setOutOn(supNum)
+		if self.getOutState(supNum):
+			self.setOutOff(supNum)
 		else:
-			setOutOff(supNum)
+			self.setOutOn(supNum)
 			
 	# Fetch output on/off
 	def getEnabled(self, supNum):
-		return bool(self.ask("OUTPut? (@%d)"% supNum))
+		return bool(int(self.ask("OUTPut? (@%d)"% supNum)))
 	def getEnabledAll(self, maxSup = MAX_SUP_GLOBAL):
 		enabledResponses=self.ask("OUTPut? (@1:%d)"% maxSup).split(',')
 		enabledResponseInts = list(map(int,enabledResponses))
@@ -237,7 +237,7 @@ class psuN6705B():
 
 	###########################################################################
 	# Core setting
-	def setOutVolt(self, supNum, volt):
+	def setOutVolt(self, volt, supNum):
 		self.msg("Setting %d Vout = %g" % (supNum, volt))
 		self.write("VOLTage %f,(@%d)"% (float(volt), supNum))
 	def getOutVolt(self, supNum, engNumber=True):
@@ -270,7 +270,7 @@ class psuN6705B():
 			p=self.read()
 		else:
 			p=-1
-		val.setAll(v=v,vrms=vrms,i=i,p=p)
+		val.setAll(v=float(v),vrms=float(vrms),i=float(i),p=float(p))
 		return val
 
 	def getDatAll(self, maxSup = MAX_SUP_GLOBAL):
