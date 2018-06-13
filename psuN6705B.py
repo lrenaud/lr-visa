@@ -7,13 +7,14 @@
 # 		instruments. There are other projects that already do this to some
 #		extent, but I haven't really dug into them in full. This would also
 #		ease porting the library to other PSUs and configurations
-# 2. Figure out why the power measurement of PSU#1 on WSU's equipment always
-#		hangs. It's a different module than in #2-#4, but it's not clear if
-#		there is a way to programatically check for the functionality to
-#		measure power directly rather than current/voltage.
-# 3. Make the library properly USB/Ethernet agnostic.
-# 4. Ensure we actually provide a complete set of funcitonality for the system.
+# 2. Make the library properly USB/Ethernet agnostic.
+# 3. Ensure we actually provide a complete set of functionality for the system.
 #		Currently we have no unit testing or anything of the sort.
+# 4. Standardize measurement vernacular across classes.
+# 5. Figure out why the power measurement of PSU#1 on WSU's equipment always
+#		hangs. It's a different module than in #2-#4, but it's not clear if
+#		there is a way to pragmatically check for the functionality to
+#		measure power directly rather than current/voltage.
 ###############################################################################
 # KNOWN MISSING FEATURES, TODO:
 #	output grouping
@@ -28,7 +29,7 @@
 #	advanced protection
 ###############################################################################
 
-# Linux Depdnacnies (For the LAN Mode)
+# Linux Dependencies (For the LAN Mode)
 #######################
 # sudo -H pip3 install pyvisa-py 
 # sudo -H pip3 install engineering-notation
@@ -36,11 +37,11 @@
 # Now you're set to go!
 
 
-# Linux Depdnacnies (For the old USB Mode)
+# Linux Dependencies (For the old USB Mode)
 #######################
 # sudo -H pip3 install python-usbtmc pyusb
 # sudo -H pip3 install numpy scikit-rf engineering-notation
-# under linux, create a usbtmc group, and add your user to that group
+# under Linux, create a usbtmc group, and add your user to that group
 ## i.e. $ sudo chmod groupadd usbtmc
 #       $ sudo usermod -aG usbtmc <your username>
 # then logout and login to make the changes take effect.
@@ -60,15 +61,11 @@ from engineering_notation import *
 # For JSON dumping PSU_Samples
 import json
 
-#from struct import unpack
-#import numpy as np
-#import skrf as rf # scikit-rf
-
 ###############################################################################
 class psuN6705B():
-	MAX_SUP_GLOBAL = 4;
+	MAX_SUP_GLOBAL = 4
 	def __init__(self, rm=None, ip_addr='169.254.219.40', DRY=True, timeout=120):
-		self.DRY = DRY;
+		self.DRY = DRY
 		self.rm=rm
 		self.extra_sleep = -1
 		# OLD USB CODE
@@ -83,11 +80,11 @@ class psuN6705B():
 			if (self.DRY==False):
 				self.h=self.rm.open_resource(self.TCPIP_STR)
 				self.h.timeout = timeout
-		# Tie into the USB interface fpr the N6705B
+		# Tie into the USB interface for the N6705B
 		self.msg(self.ask("*IDN?"))
 		self.pre_wait()
 		self.wait()
-		
+	
 	###########################################################################
 	## Reset
 	## reset the device (everything)
@@ -104,7 +101,7 @@ class psuN6705B():
 		self.msg("configuring OPC")
 		self.write("*OPC")
 	# Actually do the wait. if quiet this is silent.
-	def wait(self, quiet=False):
+	def wait(self, quiet=False, loud=False):
 		if self.extra_sleep > 0:
 			if(not quiet):
 				self.msg("Pre-sleep for extra %g seconds" % self.extra_sleep)
@@ -138,7 +135,7 @@ class psuN6705B():
 	###########################################################################
 	# Data handling helper functions
 	def arraySplitMap(message, engNumber=True):
-		# Spit a comma seperated array and map the values as floats or EngNumbers.
+		# Spit a comma separated array and map the values as floats or EngNumbers.
 		dat_arr=message.split(',')
 		if engNumber:
 			data_mapping=map(lambda x: EngNumber(x, 6), dat_arr)
@@ -147,6 +144,45 @@ class psuN6705B():
 		return list(data_mapping)
 
 	###########################################################################
+	# Shortcuts to the slave object
+	def write(self, s):
+		if (self.DRY):
+			self.msg("DRY_WRITE: '%s'" % s)
+		else:
+			self.h.write(s)
+	
+	def ask(self, s):
+		return self.query(s)
+	def query(self, s, strip=True):
+		if (self.DRY):
+			self.msg("DRY_ASK__: '%s'" % s)
+			return '0'
+		else:
+			tmpString = self.h.query(s)
+			if tmpString[-1] == '\n' and strip:
+				tmpString = tmpString[:-1]
+			return tmpString
+	def queryNL(self, s):
+		return self.query(s, strip=False)
+
+	# a read that strips trailing newlines.
+	def read(self, strip=True):
+		if (self.DRY):
+			self.msg("DRY_READ_:")
+			return '0'
+		else:
+			tmpString = self.h.read()
+			if tmpString[-1] == '\n' and strip:
+				tmpString = tmpString[:-1]
+			return tmpString
+	# The normal "read" call
+	def readNL(self):
+		return self.read(strip=False)
+
+	###########################################################################
+	# Unique Class Methods
+	###########################################################################
+
 	## Output Enable/Disable
 	def setOutToggle(self, supNum):
 		if self.getOutState(supNum):
@@ -211,7 +247,7 @@ class psuN6705B():
 		self.write("CURRent %f,(@1:%d)"% (imax, maxSup))
 		
 	###########################################################################
-	## Fetch and set ranges to mimums
+	## Fetch and set ranges to minimums
 	def setOutVRangeMin(self, supNum):
 		voltMinRange = float(\
 			self.ask("VOLTage:RANGe? MIN,(@%d)"% supNum))
@@ -287,42 +323,6 @@ class psuN6705B():
 								vrms=vrms_tmp[ind],\
 								i=i_tmp[ind])
 		return vals
-
-	###########################################################################
-	# Shortcuts to the slave object
-	def write(self, s):
-		if (self.DRY):
-			self.msg("DRY_WRITE: '%s'" % s)
-		else:
-			self.h.write(s)
-
-	def ask(self, s):
-		return self.query(s)
-	def query(self, s, strip=True):
-		if (self.DRY):
-			self.msg("DRY_ASK__: '%s'" % s)
-			return '0'
-		else:
-			tmpString = self.h.query(s)
-			if tmpString[-1] == '\n' and strip:
-				tmpString = tmpString[:-1]
-			return tmpString
-	def queryNL(self, s):
-		return self.query(s, strip=False)
-
-	# a read that strips trailing newlines.
-	def read(self, strip=True):
-		if (self.DRY):
-			self.msg("DRY_READ_: '%s'" % s)
-			return '0'
-		else:
-			tmpString = self.h.read()
-			if tmpString[-1] == '\n' and strip:
-				tmpString = tmpString[:-1]
-			return tmpString
-	# The normal "read" call
-	def readNL(self):
-		return self.read(strip=False)
 ###############################################################################
 # END OF CLASS
 ###############################################################################
@@ -355,4 +355,10 @@ class PSU_Sample():
 		else:
 			val_v = 'Unknown'
 		return('%12sV @ %12sA' % (val_v, val_i))
+###############################################################################
+# END OF CLASS
+###############################################################################
 
+# Run this ONLY if we are called directly rather than imported
+if __name__ == "__main__":
+	h=psuN6705B(DRY=False)
