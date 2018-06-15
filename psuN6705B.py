@@ -55,7 +55,6 @@
 import visa	# For LAN and USB, but we only use for the LAN mode right now.
 #import usbtmc
 from time import sleep
-from sys import stdout
 from engineering_notation import *
 
 # For JSON dumping PSU_Samples
@@ -107,8 +106,7 @@ class psuN6705B():
 				self.msg("Pre-sleep for extra %g seconds" % self.extra_sleep)
 			sleep(self.extra_sleep)
 		if(not quiet):
-			self.msg("Waiting for sync... ", end='')
-			stdout.flush()
+			self.msg("Waiting for sync... ", end='', flush=True)
 		if not self.DRY:
 			# rm is a simple test to see if we're in VISA mode
 			self.write("*OPC?")

@@ -44,7 +44,6 @@
 import visa	# For LAN and USB, but we only use for the LAN mode right now.
 #import usbtmc
 from time import sleep
-from sys import stdout
 from engineering_notation import *
 
 # Used if we end up reading in binary packed data.
@@ -105,8 +104,7 @@ class analyzerN9030A():
 				self.msg("Pre-sleep for extra %g seconds" % self.extra_sleep)
 			sleep(self.extra_sleep)
 		if(not quiet):
-			self.msg("Waiting for sync... ", end='')
-			stdout.flush()
+			self.msg("Waiting for sync... ", end='', flush=True)
 		if not self.DRY:
 			if self.rm == None:
 				while(self.ask("*OPC?") != '1'):
@@ -220,8 +218,7 @@ class analyzerN9030A():
 		self.write(":DDEMod:MOD %s" % mod_str)
 		self.msg("set modulation %s" % mod_str)
 		if wait:
-			self.msg("           waiting...", end='')
-			stdout.flush()
+			self.msg("           waiting...", end='', flush=True)
 			self.wait(quiet=True)
 			self.msg(" ready!")
 	def getModulation(self):
@@ -234,8 +231,7 @@ class analyzerN9030A():
 		self.write(":DDEMod:SRATe %sHz" % rate_hz)
 		self.msg("set rate %sHz" % rate_hz, end='')
 		if wait:
-			self.msg("      waiting...", end='')
-			stdout.flush()
+			self.msg("      waiting...", end='', flush=True)
 			self.wait(quiet=True)
 			self.msg(" ready!")
 		else:
