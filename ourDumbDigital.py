@@ -48,9 +48,9 @@ class ourDumbDigital():
 			self.htty.read_all()
 			return -1
 		else:
-			RESP1 = h.htty.readline()
+			RESP1 = self.htty.readline()
 			RESP1int = int(RESP1.decode().strip('\n').split(' ')[-1], 16)
-			RESP2 = h.htty.readline()
+			RESP2 = self.htty.readline()
 			RESP2int = int(RESP2.decode().strip('\n').split(' ')[-1], 16)
 			if not quiet:
 				print('Serial Control: SET 0x%02X, GOT 0x%02X' % (RESP1int, RESP2int))

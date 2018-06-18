@@ -171,8 +171,9 @@ class pnaPNAX():
 			return '0'
 		else:
 			tmpString = self.h.read()
-			if tmpString[-1] == '\n' and strip:
-				tmpString = tmpString[:-1]
+			if strip and len(tmpString) > 0:
+				if tmpString[-1] == '\n':
+					tmpString = tmpString[:-1]
 			return tmpString
 	# The normal "read" call
 	def readNL(self):
